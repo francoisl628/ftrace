@@ -88,22 +88,30 @@ int handle_init(int const ac, char const **av)
     return SUCCESS;
 }
 
-static bool tracerBool(pid_t pid, symbol_t *list)
+bool trace_and_print(pid_t pid, symbol_t *list)
 {
-    int status = 0;
-    mstack_t *stack;
+    int wait_status;
+    mstack_t *value;
 
-    wait(&status);
-    if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXIT) == -1)
+    wait(&wait_status);
+    if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXIT) == -1) {
         return (gest_perror("ptrace"));
-    while (!WIFEXITED(status)) {
+    }
+    while (!WIFEXITED(wait_status)) {
         ptrace(PTRACE_SINGLESTEP, pid, NULL, NULL);
-        wait(&status);
-        if (WIFEXITED(status))
+        wait(&wait_status);
+        if (WIFEXITED(wait_status)) {
 			break;
-        print_calls(list, &stack, pid);
+        }
+        print_calls(list, &value, pid);
     }
     return false;
+}
+
+//done
+bool tracerBool(pid_t pid, symbol_t *list)
+{
+    return trace_and_print(pid, list);
 }
 
 
