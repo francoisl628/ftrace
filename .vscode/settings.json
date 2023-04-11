@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "gelf.h": "c",
+        "string.h": "c",
+        "pthread.h": "c",
+        "typeinfo": "c"
+    }
+}
