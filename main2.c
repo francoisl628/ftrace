@@ -41,21 +41,33 @@ static symbol_t *create_node(unsigned long addr, char *name)
     return new;
 }
 
+//isok
 symbol_t *handle_list(symbol_t *list, data_t *data, Elf **elf, int i)
 {
-    symbol_t *new = create_node(data->symtab[i].st_value,
-    elf_strptr(*elf, data->shdr->sh_link, data->symtab[i].st_name));
-    symbol_t *tmp = list;
+    char *name = elf_strptr(*elf, data->shdr->sh_link, data->symtab[i].st_name);
+    symbol_t *node = malloc(sizeof(symbol_t));
+    if (node == NULL) {
+        return NULL;
+    }
+    node->addr = data->symtab[i].st_value;
+    node->name = strdup(name);
+    node->prev = NULL;
+    node->next = NULL;
 
-    if (list == NULL)
-        return new;
-    while (tmp->next != NULL)
-        tmp = tmp->next;
-    tmp->next = new;
-    new->prev = tmp;
-    return list;
+    if (list == NULL) {
+        return node;
+    } else {
+        symbol_t *tail = list;
+        while (tail->next != NULL) {
+            tail = tail->next;
+        }
+        tail->next = node;
+        node->prev = tail;
+        return list;
+    }
 }
-
+ 
+//done
 bool start_trace(func_t *func)
 {
     if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
