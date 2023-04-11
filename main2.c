@@ -56,37 +56,45 @@ symbol_t *handle_list(symbol_t *list, data_t *data, Elf **elf, int i)
     return list;
 }
 
-static bool gest_perror(const char *error)
+bool start_trace(func_t *func)
 {
-    perror(error);
-    return true;
-}
-
-static bool start_trace(func_t *func)
-{
-    if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1)
-        return (gest_perror("ptrace"));
-    if (execvp(func->cmd, &func->arg[0]) == -1)
-        return (gest_perror("execvp"));
+    if (ptrace(PTRACE_TRACEME, 0, NULL, NULL) == -1) {
+        perror("ptrace");
+        return true;
+    }
+    if (execvp(func->cmd, &func->arg[0]) == -1) {
+        perror("execvp");
+        return true;
+    }
     return false;
 }
 
-int handle_init(int const ac, char const **av)
-{
+//done
+int handle_init(int const argc, char const **argv) {
     Elf *elf;
-    symbol_t *sym = NULL;
-    func_t func;
-
-    if (init_elf(av, &elf))
-        return FAIL;
-    sym = get_symbol(&elf);
-    if (sym == NULL)
-        return FAIL;
-    get_arg(&func, ac, av);
-    trace(sym, &func);
+    if (init_elf(argv, &elf)) {
+        return 1;
+    }
+    symbol_t *calc = get_symbol(&elf);
+    if (calc == NULL) {
+        elf_end(elf);
+        return 1;
+    }
+    func_t function;
+    get_arg(&function, argc, argv);
+    trace(calc, &function);
     elf_end(elf);
+    return 0;
+}
+
+//done
+int init_and_trace(int const argc, char const **argv) {
+    if (handle_init(argc, argv) != SUCCESS) {
+        return FAIL;
+    }
     return SUCCESS;
 }
+
 
 bool trace_and_print(pid_t pid, symbol_t *list)
 {
@@ -95,7 +103,8 @@ bool trace_and_print(pid_t pid, symbol_t *list)
 
     wait(&wait_status);
     if (ptrace(PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACEEXIT) == -1) {
-        return (gest_perror("ptrace"));
+        perror("ptrace");
+        return true;
     }
     while (!WIFEXITED(wait_status)) {
         ptrace(PTRACE_SINGLESTEP, pid, NULL, NULL);
